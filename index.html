@@ -670,12 +670,17 @@ footer{border-top:1px solid var(--line);padding:22px 0 34px;position:relative;z-
     btn.classList.add('busy');
     $('#goLbl').textContent = 'Sending prompt…';
 
-    fetch('api/contribute.php', {
+    // A reference the provider will echo back to us later, and that we can
+    // show on a receipt / reconcile against — unique per attempt.
+    var reference = 'SIFUNA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+
+    fetch('api/initiate-payment', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         amount: state.amount,
-        phone: m,
+        phone_number: m,
+        reference: reference,
         name: $('#fullname').value.trim(),
         email: email
       })
@@ -698,11 +703,11 @@ footer{border-top:1px solid var(--line);padding:22px 0 34px;position:relative;z-
       });
     })
     .then(function(res){
-      if (!res.ok || !res.body.ok) throw new Error(res.body.error || 'Could not start the payment.');
-      $('#wAmt').textContent = fmt(res.body.amount);
-      $('#wPhone').textContent = res.body.phone;
+      if (!res.ok || !res.body.success) throw new Error(res.body.message || 'Could not start the payment.');
+      $('#wAmt').textContent = fmt(state.amount);
+      $('#wPhone').textContent = m;
       showPanel('#pWait');
-      startPoll(res.body.id, res.body.token);
+      startPoll(res.body.transaction_request_id);
     })
     .catch(function(err){
       formError(err.message || 'Could not reach the server. Check your connection and try again.');
@@ -717,14 +722,13 @@ footer{border-top:1px solid var(--line);padding:22px 0 34px;position:relative;z-
     render();
   }
 
-  /* ── poll until the callback lands ── */
-  function startPoll(id, token){
+  /* ── poll until the provider confirms ── */
+  function startPoll(transactionRequestId){
     resetBtn();
     stopPoll();
     // Daraja gives up at ~60s; we watch for 3 minutes before calling it.
     deadline = Date.now() + 180000;
 
-    var tick = 0;
     poll = setInterval(function(){
       if (Date.now() > deadline) {
         stopPoll();
@@ -733,26 +737,21 @@ footer{border-top:1px solid var(--line);padding:22px 0 34px;position:relative;z-
         return;
       }
 
-      // Every third poll (~9s) the server also asks HavenPay directly, so the
-      // page still confirms even when no webhook is configured.
-      tick++;
-      var deep = (tick % 3 === 1) ? '&deep=1' : '';
-
-      fetch('api/status.php?id=' + encodeURIComponent(id) + '&token=' + encodeURIComponent(token) + deep, {cache:'no-store'})
+      fetch('api/payment-status?transaction_request_id=' + encodeURIComponent(transactionRequestId), {cache:'no-store'})
         .then(function(r){ return r.text(); })
         .then(function(t){
           var s = null;
           try { s = t ? JSON.parse(t) : null; } catch (_) {}
-          if (!s || !s.ok) return;   // a bad poll is not fatal — the next one retries
-          if (s.status === 'completed') {
+          if (!s || !s.status) return;   // a bad poll is not fatal — the next one retries
+          if (s.status === 'SUCCESS') {
             stopPoll();
-            $('#okAmt').textContent = fmt(s.amount);
+            $('#okAmt').textContent = fmt(s.amount || state.amount);
             if (s.receipt) {
               $('#okCode').textContent = s.receipt;
               $('#okReceipt').style.display = '';
             }
             showPanel('#pOk');
-          } else if (s.status === 'failed') {
+          } else if (s.status === 'FAILED') {
             stopPoll();
             $('#noMsg').textContent = s.reason || 'The payment did not go through.';
             showPanel('#pNo');
