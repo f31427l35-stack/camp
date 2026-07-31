@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sisi ndio Sifuna — Contribute</title>
+<meta name="description" content="Sisi ndio Sifuna. Contribute from KSh 99 via M-Pesa. Enter your number, tap once, approve the prompt.">
+<meta name="theme-color" content="#0B0B0F">
+<meta property="og:title" content="Sisi ndio Sifuna">
+<meta property="og:description" content="No godfathers. No blank cheques. Just us. Contribute from KSh 99.">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Ephesis&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════════════════════════
+   Mobile-first. Desktop is the enhancement, not the baseline.
+   ════════════════════════════════════════════════════════════ */
+:root{
+  --flame-1:#F9A03F; --flame-2:#F26522; --flame-3:#EC1C24;
+  --flame: linear-gradient(160deg,var(--flame-1) 0%,var(--flame-2) 42%,var(--flame-3) 100%);
+  --ink:#0B0B0F;
+  --line:rgba(255,255,255,.10);
+  --line-2:rgba(255,255,255,.17);
+  --paper:#FFFFFF; --paper-2:#FBF7F4; --paper-line:#E8E0DA;
+  --txt:#12121A; --txt-mute:#6B6862;
+  --inv-mute:rgba(255,255,255,.62);
+  --ok:#15803D;
+  --r:12px; --r-lg:20px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:var(--ink); color:#fff; line-height:1.55;
+  overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.glow{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.glow::before{content:'';position:absolute;width:520px;height:520px;top:-240px;right:-180px;
+  border-radius:50%;filter:blur(110px);opacity:.34;
+  background:radial-gradient(circle,#F26522,transparent 68%)}
+.glow::after{content:'';position:absolute;width:460px;height:460px;top:360px;left:-220px;
+  border-radius:50%;filter:blur(110px);opacity:.26;
+  background:radial-gradient(circle,#EC1C24,transparent 68%)}
+
+.wrap{position:relative;z-index:1;max-width:560px;margin-inline:auto;padding:0 16px}
+
+/* ─── masthead ─── */
+.top{display:flex;align-items:baseline;gap:8px;padding:16px 0 4px;position:relative;z-index:3}
+.mark{font-family:'Ephesis',cursive;font-size:2.1rem;line-height:1;
+  background:var(--flame);-webkit-background-clip:text;background-clip:text;color:transparent}
+.top .sub{font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--inv-mute)}
+
+/* ─── hero banner: portrait bleeds in from the top right, text sits in front ───
+   The portrait is a transparent cut-out, so it needs no frame. Two things keep
+   the words legible over it: a mask that fades the photo out towards the left,
+   and a scrim above it. Text is the top layer, never competing with a face. */
+/* No min-height: the hero is exactly as tall as its text, so the card sits
+   straight underneath. The portrait keeps its full height and simply runs on
+   behind the card, which reads as depth instead of dead space. */
+.hero{position:relative;padding:4px 0 18px}
+/* The <picture> wrapper must not occupy a line box of its own — only the
+   absolutely-positioned <img> inside it should paint. */
+.hero picture{display:contents}
+/* Sized so the photo's bottom lands inside the scrim below — otherwise it
+   runs past the hero and the contribution card slices it off mid-torso. */
+.hero-photo{
+  position:absolute;top:-52px;right:-16px;z-index:0;
+  width:64%;max-width:230px;height:auto;pointer-events:none;user-select:none;
+  -webkit-mask-image:linear-gradient(to left,#000 40%,rgba(0,0,0,.5) 70%,transparent 97%);
+          mask-image:linear-gradient(to left,#000 40%,rgba(0,0,0,.5) 70%,transparent 97%);
+}
+.hero::after{
+  content:'';position:absolute;inset:-56px -18px -26px -20px;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(96deg, var(--ink) 24%, rgba(11,11,15,.84) 46%, rgba(11,11,15,.30) 72%, rgba(11,11,15,0) 93%),
+    linear-gradient(to bottom, rgba(11,11,15,0) 40%, rgba(11,11,15,.45) 66%, rgba(11,11,15,.9) 88%, var(--ink) 100%);
+}
+.hero-inner{position:relative;z-index:2}
+h1{margin:0;font-size:2.05rem;font-weight:800;letter-spacing:-.03em;line-height:1;
+  text-shadow:0 2px 18px rgba(11,11,15,.85)}
+h1 .s{display:block;font-family:'Ephesis',cursive;font-weight:400;font-size:3.4rem;
+  line-height:.86;letter-spacing:0;margin-top:.04em;
+  background:var(--flame);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin:12px 0 0;font-size:.92rem;color:rgba(255,255,255,.86);max-width:23em;
+  text-shadow:0 1px 12px rgba(11,11,15,.95)}
+.hero p b{color:#fff;font-weight:600}
+
+/* ─── the card ─── */
+/* z-index 3 puts the card above the portrait (0) and its scrim (1), so it
+   overlaps him rather than being overlapped. */
+.card{background:var(--paper);color:var(--txt);border-radius:var(--r-lg);
+  box-shadow:0 -6px 34px -8px rgba(11,11,15,.9), 0 30px 70px -25px rgba(0,0,0,.8);
+  overflow:hidden;margin-bottom:22px;position:relative;z-index:3}
+.card-top{background:var(--flame);color:#fff;padding:15px 18px}
+.card-top h2{margin:0;font-size:1.02rem;font-weight:700}
+.card-top p{margin:2px 0 0;font-size:.78rem;color:rgba(255,255,255,.92)}
+.card-body{padding:18px 16px 20px}
+
+.lbl{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+.lbl label{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-mute)}
+.lbl .hint{font-size:.72rem;color:var(--txt-mute)}
+
+/* 3 across on a phone — 12 cells lands as a clean 4×3 block */
+.amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.amt{position:relative;border:1.5px solid var(--paper-line);background:var(--paper-2);
+  border-radius:var(--r);padding:11px 4px 10px;cursor:pointer;text-align:center;
+  display:flex;flex-direction:column;align-items:center;
+  transition:transform .15s,border-color .15s,background .15s,box-shadow .15s;
+  -webkit-tap-highlight-color:transparent}
+.amt .cur{font-size:.55rem;font-weight:700;letter-spacing:.1em;color:var(--txt-mute);line-height:1}
+.amt .val{font-size:.98rem;font-weight:700;letter-spacing:-.02em;line-height:1.3}
+.amt[aria-checked="true"]{background:var(--flame);border-color:transparent;color:#fff;
+  box-shadow:0 10px 22px -9px rgba(236,28,36,.8);transform:translateY(-2px)}
+.amt[aria-checked="true"] .cur{color:rgba(255,255,255,.85)}
+.amt:focus-visible{outline:3px solid rgba(242,101,34,.45);outline-offset:2px}
+.amt .flag{position:absolute;top:-7px;left:50%;transform:translateX(-50%);background:var(--ink);
+  color:#fff;font-size:.5rem;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:999px;white-space:nowrap}
+.amt.other .val{font-size:.86rem}
+
+.custom{margin-top:8px;display:none}
+.custom.show{display:block}
+
+.inp{display:flex;align-items:stretch;border:1.5px solid var(--paper-line);
+  border-radius:var(--r);background:var(--paper-2);overflow:hidden}
+.inp .pre{display:flex;align-items:center;padding:0 12px;font-size:.85rem;font-weight:700;
+  color:var(--txt-mute);border-right:1.5px solid var(--paper-line);white-space:nowrap}
+.inp input{flex:1;border:0;background:transparent;padding:14px 12px;font-size:1rem;
+  font-weight:600;outline:none;min-width:0;color:var(--txt)}
+.inp:focus-within{border-color:var(--flame-2);background:#fff}
+
+.field{margin-top:15px}
+.field > label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--txt-mute);margin-bottom:8px}
+.field input[type=text],.field input[type=email]{width:100%;border:1.5px solid var(--paper-line);
+  border-radius:var(--r);background:var(--paper-2);padding:14px;font-size:.95rem;
+  font-weight:500;outline:none;color:var(--txt)}
+.field input:focus{border-color:var(--flame-2);background:#fff}
+.err{display:none;margin:6px 0 0;font-size:.76rem;color:var(--flame-3);font-weight:500}
+.field.bad .inp,.field.bad input{border-color:var(--flame-3)}
+.field.bad .err{display:block}
+.two{display:grid;grid-template-columns:1fr;gap:12px}
+
+.impact{margin-top:14px;display:flex;gap:9px;align-items:flex-start;
+  background:linear-gradient(180deg,#FFF4EC,#FFEDE2);border:1px solid #FBD9C4;
+  border-radius:var(--r);padding:11px 13px}
+.impact svg{flex-shrink:0;margin-top:3px}
+.impact p{margin:0;font-size:.8rem;line-height:1.45;color:#6B3A16}
+.impact p b{color:#3F1F08}
+
+.go{width:100%;margin-top:18px;border:0;border-radius:var(--r);background:var(--flame);
+  color:#fff;padding:17px 16px;font-size:1rem;font-weight:700;cursor:pointer;
+  box-shadow:0 14px 30px -13px rgba(236,28,36,.9);
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:transform .15s,filter .15s;-webkit-tap-highlight-color:transparent}
+.go:active{transform:scale(.99)}
+.go[disabled]{filter:grayscale(.3) brightness(.92);cursor:progress}
+.spin{width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+  border-radius:50%;animation:spin .7s linear infinite;display:none}
+.go.busy .spin{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.formerr{display:none;margin-top:12px;background:#FFF1F1;border:1px solid #F8C6C6;
+  border-radius:var(--r);padding:11px 13px;font-size:.82rem;color:#9B1C1C;line-height:1.45}
+.formerr.show{display:block}
+
+.safe{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;
+  font-size:.7rem;color:var(--txt-mute)}
+.fine{margin:11px 0 0;font-size:.68rem;line-height:1.5;color:var(--txt-mute);text-align:center}
+.fine a{color:var(--flame-3)}
+
+/* ─── waiting / result panels ─── */
+.panel{display:none;padding:30px 18px 24px;text-align:center}
+.panel.show{display:block}
+.ring{width:62px;height:62px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;
+  background:var(--flame);box-shadow:0 12px 26px -11px rgba(236,28,36,.8)}
+.ring.wait{position:relative;background:transparent;border:3px solid #F1E7E0}
+.ring.wait::after{content:'';position:absolute;inset:-3px;border-radius:50%;
+  border:3px solid transparent;border-top-color:var(--flame-2);animation:spin 1s linear infinite}
+.ring.ok{background:linear-gradient(160deg,#22C55E,#15803D);box-shadow:0 12px 26px -11px rgba(21,128,61,.8)}
+.ring.no{background:#4B5563;box-shadow:none}
+.panel h3{margin:0 0 7px;font-size:1.22rem;font-weight:700;letter-spacing:-.02em}
+.panel > p{margin:0 auto;max-width:34ch;font-size:.87rem;color:var(--txt-mute)}
+.big{display:inline-block;margin:14px 0 2px;font-size:1.75rem;font-weight:800;letter-spacing:-.03em;
+  background:var(--flame);-webkit-background-clip:text;background-clip:text;color:transparent}
+.big.ok{background:linear-gradient(160deg,#22C55E,#15803D);-webkit-background-clip:text;background-clip:text}
+.steps{list-style:none;margin:18px 0 0;padding:14px;text-align:left;background:var(--paper-2);
+  border:1px solid var(--paper-line);border-radius:var(--r);counter-reset:s}
+.steps li{position:relative;padding-left:28px;font-size:.8rem;color:#3A382F;margin-bottom:8px;counter-increment:s}
+.steps li:last-child{margin-bottom:0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:19px;height:19px;
+  border-radius:50%;background:var(--ink);color:#fff;font-size:.62rem;font-weight:700;display:grid;place-items:center}
+.receipt{margin-top:16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--r);padding:12px}
+.receipt .k{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:#15803D}
+.receipt .v{font-size:1.02rem;font-weight:700;letter-spacing:.04em;color:#14532D;font-variant-numeric:tabular-nums}
+.again{margin-top:16px;background:none;border:0;color:var(--flame-3);font-size:.84rem;
+  font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.tick{font-size:.72rem;color:var(--txt-mute);margin-top:12px}
+
+/* ─── below the fold ─── */
+.strip{display:flex;gap:8px;margin-bottom:22px}
+.strip div{flex:1;border:1px solid var(--line);border-radius:var(--r);padding:11px 10px;
+  background:rgba(255,255,255,.035)}
+.strip .n{font-size:1.02rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.strip .l{font-size:.62rem;color:var(--inv-mute);line-height:1.35;margin-top:2px}
+
+.sec{padding:26px 0;border-top:1px solid var(--line)}
+.sec h2{margin:0 0 14px;font-size:1.18rem;font-weight:800;letter-spacing:-.02em}
+.pill-list{display:flex;flex-wrap:wrap;gap:7px;margin:0;padding:0;list-style:none}
+.pill-list li{font-size:.76rem;color:rgba(255,255,255,.8);border:1px solid var(--line);
+  border-radius:999px;padding:7px 13px;background:rgba(255,255,255,.035)}
+
+.legal ul{margin:0;padding-left:17px;color:var(--inv-mute);font-size:.76rem;line-height:1.7}
+.legal li{margin-bottom:5px}
+
+footer{border-top:1px solid var(--line);padding:22px 0 34px;position:relative;z-index:1}
+.socials{display:flex;gap:9px;margin-bottom:14px}
+.socials a{width:36px;height:36px;border-radius:50%;border:1px solid var(--line-2);
+  display:grid;place-items:center;color:rgba(255,255,255,.7);text-decoration:none}
+.foot{font-size:.71rem;color:var(--inv-mute);line-height:1.6}
+
+/* ─── desktop enhancement ─── */
+@media(min-width:720px){
+  .wrap{max-width:620px;padding:0 24px}
+  .hero-photo{max-width:320px;top:-66px;right:-34px}
+  h1{font-size:2.7rem}
+  h1 .s{font-size:4.6rem}
+  .hero p{font-size:1rem}
+  .card-body{padding:22px 22px 24px}
+  .amounts{grid-template-columns:repeat(4,1fr)}
+  .two{grid-template-columns:1fr 1fr}
+  .amt .val{font-size:1.04rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <div class="top">
+    <span class="mark">Sifuna</span>
+    <span class="sub">Nairobi</span>
+  </div>
+
+  <div class="hero">
+    <picture>
+      <source srcset="sifuna-banner.webp" type="image/webp">
+      <img class="hero-photo" src="sifuna-banner.png" alt="Edwin Sifuna"
+           width="290" height="387" fetchpriority="high" decoding="async">
+    </picture>
+    <div class="hero-inner">
+      <h1>Sisi ndio<span class="s">Sifuna</span></h1>
+      <p>No godfathers. No blank cheques. This work is funded <b>ninety-nine shillings at a time</b> — which is exactly why it can never be bought.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════ THE CARD ═══════════ -->
+  <div class="card">
+    <div class="card-top">
+      <h2>Weka yako. Make your contribution.</h2>
+      <p>Enter your number and approve the M-Pesa prompt.</p>
+    </div>
+
+        <form class="card-body" id="f" novalidate>
+
+      <div class="lbl">
+        <label id="aLbl">Choose an amount</label>
+        <span class="hint">Kenyan Shillings</span>
+      </div>
+
+      <div class="amounts" role="radiogroup" aria-labelledby="aLbl" id="amounts">
+                <button type="button" class="amt" role="radio"
+                aria-checked="true"
+                data-v="99"
+                data-impact="the people&#039;s shilling — the price of being counted in.">
+          <span class="flag">SISI SOTE</span>          <span class="cur">KSH</span>
+          <span class="val">99</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="120"
+                data-impact="a week of bundles for a volunteer running a mobilisation group.">
+                    <span class="cur">KSH</span>
+          <span class="val">120</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="250"
+                data-impact="50 leaflets into the hands of voters at a stage or market.">
+                    <span class="cur">KSH</span>
+          <span class="val">250</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="500"
+                data-impact="fuels a boda mobiliser for a full day of door-to-door.">
+                    <span class="cur">KSH</span>
+          <span class="val">500</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="1000"
+                data-impact="a day pack for one ward volunteer — transport, lunch, materials.">
+                    <span class="cur">KSH</span>
+          <span class="val">1,000</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="2000"
+                data-impact="PA hire for a baraza, so the whole estate can hear.">
+                    <span class="cur">KSH</span>
+          <span class="val">2,000</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="4500"
+                data-impact="branded t-shirts for a street team of ten.">
+                    <span class="cur">KSH</span>
+          <span class="val">4,500</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="9500"
+                data-impact="a full day of organised canvassing across one ward.">
+                    <span class="cur">KSH</span>
+          <span class="val">9,500</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="19000"
+                data-impact="a youth town hall — venue, sound and refreshments for 200.">
+                    <span class="cur">KSH</span>
+          <span class="val">19,000</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="45000"
+                data-impact="a constituency-level mobilisation weekend across many wards.">
+                    <span class="cur">KSH</span>
+          <span class="val">45,000</span>
+        </button>
+                <button type="button" class="amt" role="radio"
+                aria-checked="false"
+                data-v="90000"
+                data-impact="a countywide push — the weekend that moves the numbers.">
+                    <span class="cur">KSH</span>
+          <span class="val">90,000</span>
+        </button>
+                <button type="button" class="amt other" role="radio" aria-checked="false" data-v="other">
+          <span class="cur">KSH</span><span class="val">Other</span>
+        </button>
+      </div>
+
+      <div class="custom" id="customWrap">
+        <div class="inp">
+          <span class="pre">KSh</span>
+          <label class="sr-only" for="customAmt">Custom amount</label>
+          <input type="text" id="customAmt" inputmode="numeric" autocomplete="off"
+                 placeholder="Min. 99">
+        </div>
+      </div>
+
+      <div class="impact" id="impact">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#F26522" stroke-width="2.3"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <p id="impactTxt"></p>
+      </div>
+
+      <!-- The one field that matters. Everything else is optional. -->
+      <div class="field" id="phoneField">
+        <label for="phone">M-Pesa number</label>
+        <div class="inp">
+          <span class="pre">🇰🇪 +254</span>
+          <input type="tel" id="phone" inputmode="numeric" autocomplete="tel-national"
+                 placeholder="712 345 678" maxlength="13">
+        </div>
+        <p class="err" id="phoneErr">Enter a valid Safaricom or Airtel number.</p>
+      </div>
+
+      <div class="two">
+        <div class="field" id="nameField">
+          <label for="fullname">Full name <span style="text-transform:none;letter-spacing:0;font-weight:500">(optional)</span></label>
+          <input type="text" id="fullname" autocomplete="name" placeholder="For your receipt">
+        </div>
+        <div class="field" id="emailField">
+          <label for="email">Email <span style="text-transform:none;letter-spacing:0;font-weight:500">(optional)</span></label>
+          <input type="email" id="email" autocomplete="email" placeholder="you@example.com">
+          <p class="err">That email does not look right.</p>
+        </div>
+      </div>
+
+      <button type="submit" class="go" id="go">
+        <span class="spin" aria-hidden="true"></span>
+        <span id="goLbl">Contribute KSh 99</span>
+      </button>
+
+      <div class="formerr" id="formErr" role="alert"></div>
+
+      <div class="safe">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+             stroke-linecap="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Safaricom handles your PIN. We never see it.
+      </div>
+
+      <p class="fine">By contributing you confirm you are a Kenyan citizen of 18+ giving your own funds.
+        <a href="#legal">The rules</a>.</p>
+    </form>
+
+    <!-- waiting for the PIN -->
+    <div class="panel" id="pWait" role="status" aria-live="polite">
+      <div class="ring wait"></div>
+      <h3>Check your phone</h3>
+      <span class="big" id="wAmt"></span>
+      <p>We sent an M-Pesa prompt to <b id="wPhone"></b>. Enter your PIN to approve.</p>
+      <ol class="steps">
+        <li>Unlock your phone — the prompt appears on screen.</li>
+        <li>Confirm the amount and enter your M-Pesa PIN.</li>
+        <li>Stay on this page. It updates itself.</li>
+      </ol>
+      <p class="tick" id="tick">Waiting for confirmation…</p>
+    </div>
+
+    <!-- paid -->
+    <div class="panel" id="pOk" role="status" aria-live="polite">
+      <div class="ring ok">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3>Asante sana!</h3>
+      <span class="big ok" id="okAmt"></span>
+      <p>Your contribution is received. Sisi ndio Sifuna.</p>
+      <div class="receipt" id="okReceipt" style="display:none">
+        <div class="k">M-Pesa receipt</div>
+        <div class="v" id="okCode"></div>
+      </div>
+      <button type="button" class="again" id="againOk">Contribute again</button>
+    </div>
+
+    <!-- failed -->
+    <div class="panel" id="pNo" role="status" aria-live="polite">
+      <div class="ring no">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6"
+             stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+      <h3>Not completed</h3>
+      <p id="noMsg">The payment did not go through.</p>
+      <button type="button" class="again" id="againNo">Try again</button>
+    </div>
+
+      </div>
+
+  <div class="strip">
+    <div><div class="n" style="background:var(--flame);-webkit-background-clip:text;background-clip:text;color:transparent">KSh 99</div><div class="l">Lowest contribution. On purpose.</div></div>
+    <div><div class="n">17</div><div class="l">Sub-counties mobilising</div></div>
+    <div><div class="n">100%</div><div class="l">Receipted &amp; declared</div></div>
+  </div>
+
+  <section class="sec">
+    <h2>What this funds</h2>
+    <ul class="pill-list">
+      <li>Cost of living</li>
+      <li>Ease of doing business</li>
+      <li>Youth &amp; jobs</li>
+      <li>Quality healthcare</li>
+      <li>Sports &amp; arts</li>
+    </ul>
+    <p style="margin:14px 0 0;font-size:.85rem;color:rgba(255,255,255,.66)">
+      Money in politics decides who gets listened to. When thousands of people
+      give a little, nobody gets to own the agenda.
+    </p>
+  </section>
+
+  <section class="sec legal" id="legal">
+    <h2>Contribution rules</h2>
+    <ul>
+      <li>You must be a Kenyan citizen aged 18 or over, giving your own funds.</li>
+      <li>Contributions from anonymous sources, foreign governments and foreign entities are not accepted.</li>
+      <li>Contributions are subject to the limits set under Kenya's campaign financing law. Anything above the applicable threshold may be declined or refunded.</li>
+      <li>All contributions are recorded, receipted and reported as required.</li>
+      <li>Not tax-deductible. Not refundable except where required by law.</li>
+      <li>Your details are used only to receipt and report your contribution.</li>
+    </ul>
+    <!-- ACTION: have counsel confirm the exact statutory limits before launch. -->
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="socials">
+      <a href="https://twitter.com/edwinsifuna" aria-label="X" rel="noopener" target="_blank"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23 22h-6.9l-5.4-7-6.2 7H1.4l8.1-9.3L1 2h7.1l4.9 6.4L18.9 2Zm-1.2 18h1.9L7.4 3.9H5.4L17.7 20Z"/></svg></a>
+      <a href="https://www.facebook.com/EdwinWSifuna" aria-label="Facebook" rel="noopener" target="_blank"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg></a>
+      <a href="https://www.instagram.com/edwinsifuna/" aria-label="Instagram" rel="noopener" target="_blank"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.6" cy="6.4" r="1.2" fill="currentColor" stroke="none"/></svg></a>
+    </div>
+    <p class="foot">Paid for and authorised by the campaign.<br>
+      Senator, Nairobi City County · Deputy Minority Whip, Senate.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(s){ return document.querySelector(s); };
+  var MIN = 99;
+  var state = { amount: 99, custom:false };
+  var poll = null, deadline = 0;
+
+  function fmt(n){ return 'KSh ' + Number(n).toLocaleString('en-KE'); }
+
+  /* ── amount selection ── */
+  var grid = $('#amounts');
+  grid.addEventListener('click', function(e){
+    var b = e.target.closest('.amt');
+    if (!b) return;
+    Array.prototype.forEach.call(grid.children, function(c){ c.setAttribute('aria-checked','false'); });
+    b.setAttribute('aria-checked','true');
+
+    if (b.dataset.v === 'other') {
+      state.custom = true;
+      $('#customWrap').classList.add('show');
+      $('#customAmt').focus();
+      state.amount = parseInt(($('#customAmt').value||'0').replace(/\D/g,''),10) || 0;
+    } else {
+      state.custom = false;
+      $('#customWrap').classList.remove('show');
+      state.amount = parseInt(b.dataset.v,10);
+    }
+    render();
+  });
+
+  $('#customAmt').addEventListener('input', function(e){
+    var raw = e.target.value.replace(/\D/g,'').slice(0,9);
+    e.target.value = raw ? Number(raw).toLocaleString('en-KE') : '';
+    state.amount = parseInt(raw,10) || 0;
+    render();
+  });
+
+  /* ── phone: type digits, we handle the rest ── */
+  var phone = $('#phone');
+  phone.addEventListener('input', function(){
+    var d = phone.value.replace(/\D/g,'');
+    // Paste-friendly: strip a leading 254 or 0 so the +254 prefix isn't doubled.
+    if (d.indexOf('254') === 0) d = d.slice(3);
+    else if (d.length && d[0] === '0') d = d.slice(1);
+    d = d.slice(0,9);
+    phone.value = d.replace(/(\d{3})(\d{3})(\d{0,3})/, function(_,a,b,c){
+      return c ? a+' '+b+' '+c : (b ? a+' '+b : a);
+    });
+    $('#phoneField').classList.remove('bad');
+  });
+
+  function msisdn(){
+    var d = phone.value.replace(/\D/g,'');
+    return /^[17]\d{8}$/.test(d) ? '254' + d : null;
+  }
+
+  function render(){
+    $('#goLbl').textContent = state.amount > 0 ? 'Contribute ' + fmt(state.amount) : 'Enter an amount';
+
+    var sel = grid.querySelector('.amt[aria-checked="true"]');
+    var line = sel && sel.dataset.impact;
+    if (line) {
+      $('#impactTxt').innerHTML = '<b>' + fmt(state.amount) + '</b> — ' + line;
+    } else if (state.amount > 0) {
+      $('#impactTxt').innerHTML = '<b>' + fmt(state.amount) + '</b> — every shilling goes straight into mobilising and reaching more of Nairobi.';
+    } else {
+      $('#impactTxt').textContent = 'Pick an amount, or type your own.';
+    }
+  }
+
+  /* Bring the card back into view.
+     The Contribute button sits near the bottom of a tall form, so by the time
+     it is tapped the page is scrolled well down. The panel that replaces the
+     form is far shorter, which leaves the card ending above the viewport and
+     the confirmation effectively off-screen. Centre it when it fits; otherwise
+     put its top just under the fold. */
+  function bringCardIntoView(centre){
+    var card = document.querySelector('.card');
+    if (!card) return;
+
+    function run(){
+      var rect  = card.getBoundingClientRect();
+      var top   = rect.top + window.scrollY;
+      var slack = window.innerHeight - rect.height;
+      var target = Math.max(0, (centre && slack > 0) ? top - (slack / 2) : top - 14);
+
+      // Plain positional scroll, deliberately. scrollTo({behavior:'smooth'})
+      // is accepted and then silently ignored by several in-app webviews —
+      // WhatsApp's and Facebook's among them, which is precisely where a
+      // shared campaign link gets opened. Landing instantly is also the right
+      // behaviour for a payment confirmation: it should simply be there.
+      window.scrollTo(0, target);
+
+      // Belt and braces for webviews that ignore window.scrollTo as well.
+      if (Math.abs(window.scrollY - target) > 8 && document.scrollingElement) {
+        document.scrollingElement.scrollTop = target;
+      }
+    }
+
+    // Now, and again as the panel swap settles — the card's height changes
+    // when the form is replaced, so the first measurement can be stale.
+    // Scrolling to the same place repeatedly is harmless.
+    run();
+    setTimeout(run, 80);
+    setTimeout(run, 350);
+  }
+
+  function showPanel(id){
+    $('#f').style.display = 'none';
+    ['#pWait','#pOk','#pNo'].forEach(function(p){ $(p).classList.remove('show'); });
+    if (id) $(id).classList.add('show');
+    bringCardIntoView(true);
+  }
+
+  function backToForm(){
+    stopPoll();
+    ['#pWait','#pOk','#pNo'].forEach(function(p){ $(p).classList.remove('show'); });
+    $('#f').style.display = '';
+    $('#formErr').classList.remove('show');
+    // The form is tall — align its top rather than centring it.
+    bringCardIntoView(false);
+  }
+  $('#againOk').addEventListener('click', backToForm);
+  $('#againNo').addEventListener('click', backToForm);
+
+  function formError(msg){
+    var el = $('#formErr');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  /* ── submit ── */
+  $('#f').addEventListener('submit', function(e){
+    e.preventDefault();
+    $('#formErr').classList.remove('show');
+
+    if (state.amount < MIN) {
+      formError('The smallest contribution is ' + fmt(MIN) + '.');
+      if (state.custom) $('#customAmt').focus();
+      return;
+    }
+
+    var m = msisdn();
+    if (!m) {
+      $('#phoneField').classList.add('bad');
+      phone.focus();
+      return;
+    }
+
+    var email = $('#email').value.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      $('#emailField').classList.add('bad');
+      $('#email').focus();
+      return;
+    }
+    $('#emailField').classList.remove('bad');
+
+    var btn = $('#go');
+    btn.disabled = true;
+    btn.classList.add('busy');
+    $('#goLbl').textContent = 'Sending prompt…';
+
+    fetch('api/contribute.php', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        amount: state.amount,
+        phone: m,
+        name: $('#fullname').value.trim(),
+        email: email
+      })
+    })
+    // Read as text first. A crashed endpoint answers with an empty body or an
+    // HTML error page, and calling r.json() on that throws a SyntaxError whose
+    // message ("invalid JSON") tells the contributor nothing they can act on.
+    .then(function(r){
+      return r.text().then(function(t){
+        var j = null;
+        try { j = t ? JSON.parse(t) : null; } catch (_) {}
+        if (!j) {
+          throw new Error(
+            r.status >= 500
+              ? 'The server had a problem starting your payment (error ' + r.status + '). Please try again in a moment.'
+              : 'We could not reach the payment service. Check your connection and try again.'
+          );
+        }
+        return { ok: r.ok, body: j };
+      });
+    })
+    .then(function(res){
+      if (!res.ok || !res.body.ok) throw new Error(res.body.error || 'Could not start the payment.');
+      $('#wAmt').textContent = fmt(res.body.amount);
+      $('#wPhone').textContent = res.body.phone;
+      showPanel('#pWait');
+      startPoll(res.body.id, res.body.token);
+    })
+    .catch(function(err){
+      formError(err.message || 'Could not reach the server. Check your connection and try again.');
+    })
+    .then(resetBtn, resetBtn);   // runs on both paths — .finally is not safe on older mobile browsers
+  });
+
+  function resetBtn(){
+    var btn = $('#go');
+    btn.disabled = false;
+    btn.classList.remove('busy');
+    render();
+  }
+
+  /* ── poll until the callback lands ── */
+  function startPoll(id, token){
+    resetBtn();
+    stopPoll();
+    // Daraja gives up at ~60s; we watch for 3 minutes before calling it.
+    deadline = Date.now() + 180000;
+
+    var tick = 0;
+    poll = setInterval(function(){
+      if (Date.now() > deadline) {
+        stopPoll();
+        $('#noMsg').textContent = 'The prompt timed out. If money left your account, contact us with your M-Pesa code.';
+        showPanel('#pNo');
+        return;
+      }
+
+      // Every third poll (~9s) the server also asks HavenPay directly, so the
+      // page still confirms even when no webhook is configured.
+      tick++;
+      var deep = (tick % 3 === 1) ? '&deep=1' : '';
+
+      fetch('api/status.php?id=' + encodeURIComponent(id) + '&token=' + encodeURIComponent(token) + deep, {cache:'no-store'})
+        .then(function(r){ return r.text(); })
+        .then(function(t){
+          var s = null;
+          try { s = t ? JSON.parse(t) : null; } catch (_) {}
+          if (!s || !s.ok) return;   // a bad poll is not fatal — the next one retries
+          if (s.status === 'completed') {
+            stopPoll();
+            $('#okAmt').textContent = fmt(s.amount);
+            if (s.receipt) {
+              $('#okCode').textContent = s.receipt;
+              $('#okReceipt').style.display = '';
+            }
+            showPanel('#pOk');
+          } else if (s.status === 'failed') {
+            stopPoll();
+            $('#noMsg').textContent = s.reason || 'The payment did not go through.';
+            showPanel('#pNo');
+          } else {
+            var left = Math.max(0, Math.round((deadline - Date.now())/1000));
+            $('#tick').textContent = 'Waiting for confirmation… ' + left + 's';
+          }
+        })
+        .catch(function(){ /* a dropped poll is not fatal — the next one retries */ });
+    }, 3000);
+  }
+
+  function stopPoll(){
+    if (poll) { clearInterval(poll); poll = null; }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
