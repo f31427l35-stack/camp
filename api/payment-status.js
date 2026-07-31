@@ -64,6 +64,7 @@ export default async function handler(req, res) {
         });
 
         const raw = await response.text();
+        console.log('Paywave Express tstatus raw response:', raw);
         let body;
         try {
             body = JSON.parse(raw);
