@@ -4,31 +4,31 @@
  *
  * Polled by the frontend every few seconds after initiating a payment.
  *
- * UNLIKE the other providers integrated today, this calls Paywave
- * Express's own POST /v1/tstatus endpoint directly on every poll, rather
- * than reading from a local store that a webhook previously updated.
- * Two reasons this is the safer design here specifically:
+ * Same architecture as the Paywave Express integration this replaced:
+ * this calls Sendit's own GET /api/v1/status endpoint directly on every
+ * poll, rather than relying on a webhook having already updated a local
+ * store. Two reasons this is still the safer design here:
  *
- *   1. Paywave Express's docs don't describe any webhook signature
- *      verification scheme — no HMAC, no secret. An unverified webhook
- *      can't be trusted to mark a payment SUCCESS on its own (anyone who
- *      found the URL could fake one). Querying the provider directly,
- *      authenticated with our own API key, has no such hole.
- *   2. It sidesteps the in-memory-store cross-function reliability
- *      problem entirely for the thing that matters most (final
- *      success/failure) — no dependency on Vercel happening to route
- *      requests to a warm container that shares memory with another
- *      function.
+ *   1. If camp were to register its own URL as a Sendit developer webhook,
+ *      that webhook has no documented signature verification either — same
+ *      "anyone who finds the URL could fake it" problem Paywave Express
+ *      had. Querying Sendit directly, authenticated with our own API key,
+ *      has no such hole. (Sendit's *real* Safaricom callback is verified
+ *      and trusted, but it terminates at Sendit itself, not at camp.)
+ *   2. It sidesteps the in-memory-store cross-function reliability problem
+ *      entirely for the thing that matters most (final success/failure).
  */
 
-const BASE_URL = 'https://paywavexpress.co.ke';
+const BASE_URL = process.env.SENDIT_BASE_URL;
 
-function mapStatus(transactionStatus) {
-    switch (String(transactionStatus || '').toLowerCase()) {
-        case 'completed':
+function mapStatus(senditStatus) {
+    // Sendit returns lowercase 'success' | 'failed' | 'pending' — different
+    // vocabulary from Paywave Express's 'completed'/'cancelled', but the
+    // three-state shape is the same.
+    switch (String(senditStatus || '').toLowerCase()) {
+        case 'success':
             return 'SUCCESS';
         case 'failed':
-        case 'cancelled':
             return 'FAILED';
         case 'pending':
         default:
@@ -47,29 +47,27 @@ export default async function handler(req, res) {
         return res.status(400).json({ status: 'ERROR', message: 'Missing transaction_request_id' });
     }
 
-    if (!process.env.PAYWAVEXPRESS_API_KEY || !process.env.PAYWAVEXPRESS_EMAIL) {
-        console.error('Missing PAYWAVEXPRESS_API_KEY or PAYWAVEXPRESS_EMAIL environment variable');
+    if (!process.env.SENDIT_API_KEY || !BASE_URL) {
+        console.error('Missing SENDIT_API_KEY or SENDIT_BASE_URL environment variable');
         return res.status(500).json({ status: 'ERROR', message: 'Payment provider not configured' });
     }
 
     try {
-        const response = await fetch(`${BASE_URL}/v1/tstatus`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                api_key: process.env.PAYWAVEXPRESS_API_KEY,
-                email: process.env.PAYWAVEXPRESS_EMAIL,
-                transaction_request_id
-            })
-        });
+        const response = await fetch(
+            `${BASE_URL}/api/v1/status?checkout_request_id=${encodeURIComponent(transaction_request_id)}`,
+            {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${process.env.SENDIT_API_KEY}` }
+            }
+        );
 
         const raw = await response.text();
-        console.log('Paywave Express tstatus raw response:', raw);
+        console.log('Sendit status raw response:', raw);
         let body;
         try {
             body = JSON.parse(raw);
         } catch {
-            console.error('Paywave Express tstatus returned non-JSON response:', raw);
+            console.error('Sendit status returned non-JSON response:', raw);
             // Report PENDING rather than FAILED on a parse hiccup — a
             // transient/malformed response here shouldn't be mistaken for
             // an actual payment failure. The frontend will just poll again.
@@ -77,18 +75,22 @@ export default async function handler(req, res) {
         }
 
         if (!response.ok) {
-            console.error('Paywave Express tstatus call failed:', body);
+            // Includes the 404 "transaction not found" case, which can happen
+            // briefly right after initiate-payment if there's any replication
+            // lag on Sendit's side — treat the same as a transient PENDING
+            // rather than surfacing it as a failure.
+            console.error('Sendit status call failed:', body);
             return res.status(200).json({ status: 'PENDING' });
         }
 
         return res.status(200).json({
-            status: mapStatus(body.TransactionStatus),
-            receipt: body.TransactionReceipt,
-            amount: body.TransactionAmount
+            status: mapStatus(body.status),
+            receipt: body.receipt,
+            amount: body.amount
         });
 
     } catch (err) {
-        console.error('Paywave Express tstatus request error:', err);
+        console.error('Sendit status request error:', err);
         // Network hiccup talking to the provider — report PENDING so the
         // frontend keeps polling rather than giving up on a transient blip.
         return res.status(200).json({ status: 'PENDING' });
