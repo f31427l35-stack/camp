@@ -21,6 +21,17 @@
 
 const UPESIPAY_BASE_URL = 'https://upesipay.com/api/v2';
 
+function getBasicAuthHeader() {
+    // Same reasoning as initiate-payment.js: build the Basic Auth header
+    // ourselves as base64("username:password") rather than trusting a
+    // pre-built token string from the UpesiPay dashboard, which caused
+    // 401 "Invalid authentication token format" errors.
+    const username = process.env.UPESIPAY_API_USERNAME;
+    const password = process.env.UPESIPAY_API_PASSWORD;
+    if (!username || !password) return null;
+    return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+}
+
 function mapStatus(upesiStatus) {
     // UpesiPay's callback/status vocabulary is 'success' | 'failed' |
     // 'cancelled' | 'timeout', with an in-flight state presumably reported
@@ -53,8 +64,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ status: 'ERROR', message: 'Missing transaction_request_id' });
     }
 
-    if (!process.env.UPESIPAY_AUTH_TOKEN) {
-        console.error('Missing UPESIPAY_AUTH_TOKEN environment variable');
+    const authHeader = getBasicAuthHeader();
+    if (!authHeader) {
+        console.error('Missing UPESIPAY_API_USERNAME or UPESIPAY_API_PASSWORD environment variable');
         return res.status(500).json({ status: 'ERROR', message: 'Payment provider not configured' });
     }
 
@@ -63,7 +75,7 @@ export default async function handler(req, res) {
             `${UPESIPAY_BASE_URL}/transaction-status?reference=${encodeURIComponent(transaction_request_id)}`,
             {
                 method: 'GET',
-                headers: { 'Authorization': `Basic ${process.env.UPESIPAY_AUTH_TOKEN}` }
+                headers: { 'Authorization': authHeader }
             }
         );
 
