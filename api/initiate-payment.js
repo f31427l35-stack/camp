@@ -3,36 +3,44 @@
  * POST /api/initiate-payment
  *
  * Called by the frontend when the user taps "Proceed to Payment".
- * Reads your Sendit credentials from Vercel Environment Variables (never
- * from the frontend) and triggers a real STK push through Sendit.
+ * Reads your UpesiPay credentials from Vercel Environment Variables (never
+ * from the frontend) and triggers a real STK push through UpesiPay.
  *
  * Set these in your Vercel project:
  *   Project -> Settings -> Environment Variables
- *     SENDIT_API_KEY    (from your Sendit dashboard, per linked till/paybill)
- *     SENDIT_BASE_URL   (your Sendit deployment, e.g. https://sendit.vercel.app)
+ *     UPESIPAY_AUTH_TOKEN   Basic Auth token from your UpesiPay dashboard
+ *                            (API Settings / Developer Settings). Sent as
+ *                            "Authorization: Basic <token>" — NOT Bearer.
+ *     UPESIPAY_CHANNEL_ID    Optional. Your registered payment channel ID
+ *                            (integer), or "wallet" to use the free system
+ *                            M-PESA channel with no per-transaction charge.
+ *                            Defaults to "wallet" if unset.
  *
- * FOR TESTING: Sendit's own PLATFORM_ENV is set to sandbox on its side, so
- * this hits Safaricom's sandbox, not real M-Pesa — nothing here needs to
- * change to reflect that; it's entirely a Sendit-side config.
+ * FOR TESTING: UpesiPay doesn't document a separate sandbox mode the way
+ * Sendit did — there's no PLATFORM_ENV toggle mentioned in their docs.
+ * Treat requests as hitting live M-PESA unless/until UpesiPay documents
+ * otherwise; check with them directly before testing with real phones.
  *
- * NOTE ON ARCHITECTURE (carried over from the Paywave Express integration):
- * Sendit also exposes a real transaction-status endpoint
- * (GET /api/v1/status). That means api/payment-status.js queries Sendit
- * directly on every poll, same pattern as before — see that file and
- * api/sendit-callback.js for how that plays out. One difference from
- * Paywave: Sendit's own STK callback URL points back at Sendit itself
- * (it registers `${SENDIT_BASE_URL}/api/v1/callback/[accountId]` with
- * Safaricom, not a camp URL), so there's no M-Pesa webhook landing here
- * directly — api/sendit-callback.js only matters if you register camp's
- * URL as a Sendit *developer* webhook (a separate, optional feature).
+ * NOTE ON ARCHITECTURE (carried over from the Sendit/Paywave integration):
+ * UpesiPay exposes a real transaction-status endpoint
+ * (GET /api/v2/transaction-status). That means api/payment-status.js
+ * queries UpesiPay directly on every poll, same pattern as before — see
+ * that file and api/upesipay-callback.js for how that plays out.
+ *
+ * One IMPORTANT difference from Sendit: UpesiPay's STK callback posts
+ * directly to the callback_url you supply below — it does NOT terminate
+ * on UpesiPay's own servers first. That means api/upesipay-callback.js is
+ * now live traffic (not a dormant optional feature like the old
+ * sendit-callback.js was). UpesiPay's docs don't mention any
+ * signature/HMAC verification on that callback, so it's still treated as
+ * unverified — see that file for details.
  */
 
-const BASE_URL = process.env.SENDIT_BASE_URL;
+const UPESIPAY_BASE_URL = 'https://upesipay.com/api/v2';
 
 function normalizePhoneNumber(phone) {
-    // Docs show both 0712345678 and 254712345678 as accepted formats, so
-    // minimal normalization is needed — just strip non-digits and ensure
-    // a 254-prefixed shape, which is the safest common denominator.
+    // UpesiPay's docs show 254-prefixed numbers (e.g. 254712345678) in every
+    // example, so normalize the same way we did for Sendit.
     const digits = String(phone).replace(/\D/g, '');
     if (digits.startsWith('254')) return digits;
     if (digits.startsWith('0')) return '254' + digits.slice(1);
@@ -56,67 +64,75 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, message: 'Missing reference' });
     }
 
-    if (!process.env.SENDIT_API_KEY || !BASE_URL) {
-        console.error('Missing SENDIT_API_KEY or SENDIT_BASE_URL environment variable');
+    if (!process.env.UPESIPAY_AUTH_TOKEN) {
+        console.error('Missing UPESIPAY_AUTH_TOKEN environment variable');
         return res.status(500).json({ success: false, message: 'Payment provider not configured' });
     }
 
     const normalizedPhone = normalizePhoneNumber(phone_number);
+    const channelId = process.env.UPESIPAY_CHANNEL_ID || 'wallet';
+
+    // Build our own callback URL from the incoming request so this works
+    // across preview/production deployments without hardcoding a domain.
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const callbackUrl = `${proto}://${host}/api/upesipay-callback`;
 
     try {
-        console.log('Calling Sendit:', `${BASE_URL}/api/v1/stkpush`, 'phone:', normalizedPhone, 'amount:', amount, 'reference:', reference);
+        console.log('Calling UpesiPay:', `${UPESIPAY_BASE_URL}/collections/initiate/`, 'phone:', normalizedPhone, 'amount:', amount, 'reference:', reference);
 
-        const response = await fetch(`${BASE_URL}/api/v1/stkpush`, {
+        const response = await fetch(`${UPESIPAY_BASE_URL}/collections/initiate/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.SENDIT_API_KEY}`
+                'Authorization': `Basic ${process.env.UPESIPAY_AUTH_TOKEN}`
             },
             body: JSON.stringify({
-                phone: normalizedPhone,
+                channel_id: /^\d+$/.test(channelId) ? Number(channelId) : channelId,
+                phone_number: normalizedPhone,
                 amount: Math.round(Number(amount)),
-                account_reference: reference,
-                transaction_desc: name ? `Contribution — ${name}` : 'Contribution'
+                callback_url: callbackUrl
             })
         });
 
-        console.log('Sendit response status:', response.status);
+        console.log('UpesiPay response status:', response.status);
 
         const raw = await response.text();
-        console.log('Sendit response body:', raw);
+        console.log('UpesiPay response body:', raw);
 
         let body;
         try {
             body = JSON.parse(raw);
         } catch {
-            console.error('Sendit returned non-JSON response:', raw);
+            console.error('UpesiPay returned non-JSON response:', raw);
             return res.status(502).json({ success: false, message: 'Payment provider returned an unexpected response' });
         }
 
-        // Sendit's success shape is { ResponseCode: "0", CheckoutRequestID, ... };
-        // failures are { error: "..." }. CheckoutRequestID presence is the real
-        // signal of success, same principle as the transaction_request_id check
-        // this replaced.
-        if (!response.ok || !body.CheckoutRequestID) {
-            console.error('Sendit STK push failed:', body);
+        // UpesiPay's success shape is { success: true, data: { checkout_request_id, merchant_request_id, ... } };
+        // failures are { success: false, message, error_code }. checkout_request_id
+        // presence is the real signal of success, same principle as the
+        // CheckoutRequestID check this replaced.
+        if (!response.ok || !body.success || !body.data?.checkout_request_id) {
+            console.error('UpesiPay STK push failed:', body);
             return res.status(502).json({
                 success: false,
-                message: body.error || 'Could not reach payment provider'
+                message: body.message || 'Could not reach payment provider'
             });
         }
 
-        // The frontend polls on transaction_request_id — map Sendit's
-        // CheckoutRequestID onto that same field name so index.html needs no
-        // changes at all.
+        // The frontend polls on transaction_request_id — map UpesiPay's
+        // checkout_request_id onto that same field name so index.html needs
+        // no changes at all.
         return res.status(200).json({
             success: true,
             reference,
-            transaction_request_id: body.CheckoutRequestID,
-            checkout_request_id: body.CheckoutRequestID
+            transaction_request_id: body.data.checkout_request_id,
+            checkout_request_id: body.data.checkout_request_id,
+            merchant_request_id: body.data.merchant_request_id
         });
 
     } catch (err) {
-        console.error('Sendit request error:', err.name, err.message, err.cause || '');
+        console.error('UpesiPay request error:', err.name, err.message, err.cause || '');
         return res.status(502).json({ success: false, message: 'Could not reach payment provider' });
     }
 }
