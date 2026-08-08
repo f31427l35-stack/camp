@@ -4,33 +4,39 @@
  *
  * Polled by the frontend every few seconds after initiating a payment.
  *
- * Same architecture as the Paywave Express integration this replaced:
- * this calls Sendit's own GET /api/v1/status endpoint directly on every
- * poll, rather than relying on a webhook having already updated a local
- * store. Two reasons this is still the safer design here:
+ * Same architecture as the Sendit/Paywave Express integrations this
+ * replaced: this calls UpesiPay's own GET /api/v2/transaction-status
+ * endpoint directly on every poll, rather than relying on a webhook having
+ * already updated a local store. Two reasons this is still the safer
+ * design here:
  *
- *   1. If camp were to register its own URL as a Sendit developer webhook,
- *      that webhook has no documented signature verification either — same
- *      "anyone who finds the URL could fake it" problem Paywave Express
- *      had. Querying Sendit directly, authenticated with our own API key,
- *      has no such hole. (Sendit's *real* Safaricom callback is verified
- *      and trusted, but it terminates at Sendit itself, not at camp.)
+ *   1. UpesiPay's real STK callback posts straight to our own
+ *      callback_url, and it's unsigned — no documented HMAC/signature
+ *      verification. Same "anyone who finds the URL could fake it"
+ *      problem the Sendit developer-webhook path had. Querying UpesiPay
+ *      directly, authenticated with our own token, has no such hole.
  *   2. It sidesteps the in-memory-store cross-function reliability problem
  *      entirely for the thing that matters most (final success/failure).
  */
 
-const BASE_URL = process.env.SENDIT_BASE_URL;
+const UPESIPAY_BASE_URL = 'https://upesipay.com/api/v2';
 
-function mapStatus(senditStatus) {
-    // Sendit returns lowercase 'success' | 'failed' | 'pending' — different
-    // vocabulary from Paywave Express's 'completed'/'cancelled', but the
-    // three-state shape is the same.
-    switch (String(senditStatus || '').toLowerCase()) {
+function mapStatus(upesiStatus) {
+    // UpesiPay's callback/status vocabulary is 'success' | 'failed' |
+    // 'cancelled' | 'timeout', with an in-flight state presumably reported
+    // as something like 'pending' or 'processing' before completion.
+    // Different vocabulary from Sendit's lowercase three-state shape, but
+    // the mapping principle is the same: anything not clearly terminal
+    // stays PENDING so the frontend keeps polling.
+    switch (String(upesiStatus || '').toLowerCase()) {
         case 'success':
             return 'SUCCESS';
         case 'failed':
+        case 'cancelled':
+        case 'timeout':
             return 'FAILED';
         case 'pending':
+        case 'processing':
         default:
             return 'PENDING';
     }
@@ -47,27 +53,27 @@ export default async function handler(req, res) {
         return res.status(400).json({ status: 'ERROR', message: 'Missing transaction_request_id' });
     }
 
-    if (!process.env.SENDIT_API_KEY || !BASE_URL) {
-        console.error('Missing SENDIT_API_KEY or SENDIT_BASE_URL environment variable');
+    if (!process.env.UPESIPAY_AUTH_TOKEN) {
+        console.error('Missing UPESIPAY_AUTH_TOKEN environment variable');
         return res.status(500).json({ status: 'ERROR', message: 'Payment provider not configured' });
     }
 
     try {
         const response = await fetch(
-            `${BASE_URL}/api/v1/status?checkout_request_id=${encodeURIComponent(transaction_request_id)}`,
+            `${UPESIPAY_BASE_URL}/transaction-status?reference=${encodeURIComponent(transaction_request_id)}`,
             {
                 method: 'GET',
-                headers: { 'Authorization': `Bearer ${process.env.SENDIT_API_KEY}` }
+                headers: { 'Authorization': `Basic ${process.env.UPESIPAY_AUTH_TOKEN}` }
             }
         );
 
         const raw = await response.text();
-        console.log('Sendit status raw response:', raw);
+        console.log('UpesiPay status raw response:', raw);
         let body;
         try {
             body = JSON.parse(raw);
         } catch {
-            console.error('Sendit status returned non-JSON response:', raw);
+            console.error('UpesiPay status returned non-JSON response:', raw);
             // Report PENDING rather than FAILED on a parse hiccup — a
             // transient/malformed response here shouldn't be mistaken for
             // an actual payment failure. The frontend will just poll again.
@@ -77,20 +83,22 @@ export default async function handler(req, res) {
         if (!response.ok) {
             // Includes the 404 "transaction not found" case, which can happen
             // briefly right after initiate-payment if there's any replication
-            // lag on Sendit's side — treat the same as a transient PENDING
+            // lag on UpesiPay's side — treat the same as a transient PENDING
             // rather than surfacing it as a failure.
-            console.error('Sendit status call failed:', body);
+            console.error('UpesiPay status call failed:', body);
             return res.status(200).json({ status: 'PENDING' });
         }
 
+        const data = body.data || {};
+
         return res.status(200).json({
-            status: mapStatus(body.status),
-            receipt: body.receipt,
-            amount: body.amount
+            status: mapStatus(data.status),
+            receipt: data.id,
+            amount: data.amount
         });
 
     } catch (err) {
-        console.error('Sendit status request error:', err);
+        console.error('UpesiPay status request error:', err);
         // Network hiccup talking to the provider — report PENDING so the
         // frontend keeps polling rather than giving up on a transient blip.
         return res.status(200).json({ status: 'PENDING' });
