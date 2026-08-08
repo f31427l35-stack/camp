@@ -8,9 +8,19 @@
  *
  * Set these in your Vercel project:
  *   Project -> Settings -> Environment Variables
- *     UPESIPAY_AUTH_TOKEN   Basic Auth token from your UpesiPay dashboard
- *                            (API Settings / Developer Settings). Sent as
- *                            "Authorization: Basic <token>" — NOT Bearer.
+ *     UPESIPAY_API_USERNAME  Your API Username from the UpesiPay dashboard
+ *                             (20 chars).
+ *     UPESIPAY_API_PASSWORD  Your API Password from the UpesiPay dashboard
+ *                             (40 chars).
+ *
+ *   We build the "Authorization: Basic <token>" header ourselves as
+ *   base64("username:password") — the standard HTTP Basic Auth encoding.
+ *   Pasting whatever "Auth Token" string their dashboard displays directly
+ *   into a Bearer/Basic header caused 401 "Invalid authentication token
+ *   format" errors, since it's ambiguous whether that displayed value is
+ *   already base64-encoded or not. Encoding it ourselves from the raw
+ *   username/password removes that ambiguity.
+ *
  *     UPESIPAY_CHANNEL_ID    Optional. Your registered payment channel ID
  *                            (integer), or "wallet" to use the free system
  *                            M-PESA channel with no per-transaction charge.
@@ -38,6 +48,13 @@
 
 const UPESIPAY_BASE_URL = 'https://upesipay.com/api/v2';
 
+function getBasicAuthHeader() {
+    const username = process.env.UPESIPAY_API_USERNAME;
+    const password = process.env.UPESIPAY_API_PASSWORD;
+    if (!username || !password) return null;
+    return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
+}
+
 function normalizePhoneNumber(phone) {
     // UpesiPay's docs show 254-prefixed numbers (e.g. 254712345678) in every
     // example, so normalize the same way we did for Sendit.
@@ -64,8 +81,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, message: 'Missing reference' });
     }
 
-    if (!process.env.UPESIPAY_AUTH_TOKEN) {
-        console.error('Missing UPESIPAY_AUTH_TOKEN environment variable');
+    const authHeader = getBasicAuthHeader();
+    if (!authHeader) {
+        console.error('Missing UPESIPAY_API_USERNAME or UPESIPAY_API_PASSWORD environment variable');
         return res.status(500).json({ success: false, message: 'Payment provider not configured' });
     }
 
@@ -85,7 +103,7 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Basic ${process.env.UPESIPAY_AUTH_TOKEN}`
+                'Authorization': authHeader
             },
             body: JSON.stringify({
                 channel_id: /^\d+$/.test(channelId) ? Number(channelId) : channelId,
